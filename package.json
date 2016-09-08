@@ -1,7 +1,7 @@
 {
-  "name": "micro-front-end-scaffold",
+  "name": "marvel-api",
   "version": "1.0.0",
-  "description": "micro-front-end-scaffold",
+  "description": "marvel-api",
   "main": "index.js",
   "author": "Jerome Lachaud",
   "email": "jerome.lachaud@gmail.com",
