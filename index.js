@@ -1,20 +1,100 @@
 const _ = require('lodash/fp');
 
-const comics = [
-  {pages: 100, price: 50},
-  {pages: 100, price: 50},
-  {pages: 50, price: 10}
-];
+const log = (x) => {
+  console.log(x);
+  return x;
+};
 
-const filterLt40 = _.filter(function(num) {
-  return num <= 40;
+const getPath = _.property('path');
+
+const getExtension = _.property('extension');
+
+const getPrice = _.property('price');
+
+const getPrices = _.property('prices');
+
+const getUrl = _.property('url');
+
+const getUrls = _.property('urls');
+
+const getTitle = _.property('title');
+
+const getResults = _.property('results');
+
+const getImages = _.property('images');
+
+const getData = _.property('data');
+
+const getPageCount = _.property('pageCount');
+
+const getFirst = _.nth(0);
+
+const lt100 = _.gt(100);
+
+const lt4 = _.gt(4);
+
+const getFirstImage = _.flowRight([getFirst, getImages]);
+
+const responseToJSON = (response) => response.json();
+
+
+const dataSource =
+  'http://gateway.marvel.com/v1/public/comics?apikey=fc67721c305c84f50f7c6646c9b8d9d0';
+
+const mountPoint = document.getElementById('comics');
+
+const template = _.template(`
+  <% _.each(comics, (comic) => { %>
+    <ul>
+      <li>
+        <a href="<%= comic.url %>">
+          <%= comic.title %>
+          <img src="<%= comic.image %>">
+        </a>
+      </li>
+    </ul>
+  <% }); %>
+`);
+
+const getComicsFromResponse = _.flowRight([getResults, getData]);
+
+const getComicPrice = _.flowRight([getPrice, getFirst, getPrices]);
+
+const getComicUrl = _.flowRight([getUrl, getFirst, getUrls]);
+
+const getComicPath = _.flowRight([getPath, getFirstImage]);
+
+const getComicExtension = _.flowRight([getExtension, getFirstImage]);
+
+const getComicTemplateData = (comic) => ({
+  url: getComicUrl(comic),
+  title: getTitle(comic),
+  image: _.join('.', [
+    getComicPath(comic),
+    getComicExtension(comic)
+  ])
 });
 
-const filterLt100 = _.filter(function(num) {
-  return num < 100;
-});
+const prepareComicsForDisplay = _.map(getComicTemplateData);
 
-var filterPriceLt40 = _.flowRight([filterLt40, _.map(_.property('price'))]);
-var filterPagesLt100 = _.flowRight([filterLt100, _.map(_.property('pages'))]);
-console.log(filterPriceLt40(comics), 'filterPriceLt40');
-console.log(filterPagesLt100(comics), 'filterPagesLt100');
+const getLt100Pages = _.filter(_.flowRight([lt100, getPageCount]));
+
+const getLt4Dollars = _.filter(_.flowRight([lt4, getComicPrice]));
+
+const displayComics = (mountPoint, template, comics) =>
+  mountPoint.innerHTML = _.template({ comics });
+
+const parseResponse = _.flowRight([getComicsFromResponse, responseToJSON]);
+
+const filterComics = _.flowRight([getLt4Dollars, getLt100Pages]);
+
+const renderComics = _.flowRight([
+  displayComics.bind(null, mountPoint, template),
+  log,
+  prepareComicsForDisplay
+]);
+
+fetch(dataSource)
+  .then(parseResponse)
+  .then(filterComics)
+  .then(renderComics);
