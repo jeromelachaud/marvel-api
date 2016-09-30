@@ -44,7 +44,7 @@ const dataSource =
 const mountPoint = document.getElementById('comics');
 
 const template = _.template(`
-  <% _.each(comics, (comic) => { %>
+  <% _.each((comic) => { %>
     <ul>
       <li>
         <a href="<%= comic.url %>">
@@ -53,7 +53,7 @@ const template = _.template(`
         </a>
       </li>
     </ul>
-  <% }); %>
+  <% }, comics); %>
 `);
 
 const getComicsFromResponse = _.flowRight([getResults, getData]);
@@ -81,20 +81,18 @@ const getLt100Pages = _.filter(_.flowRight([lt100, getPageCount]));
 
 const getLt4Dollars = _.filter(_.flowRight([lt4, getComicPrice]));
 
-const displayComics = (mountPoint, template, comics) =>
-  mountPoint.innerHTML = _.template({ comics });
-
-const parseResponse = _.flowRight([getComicsFromResponse, responseToJSON]);
+const displayComics = _.curry((mountPoint, template, comics) =>
+  mountPoint.innerHTML = template({ comics }));
 
 const filterComics = _.flowRight([getLt4Dollars, getLt100Pages]);
 
 const renderComics = _.flowRight([
-  displayComics.bind(null, mountPoint, template),
-  log,
+  displayComics(mountPoint, template),
   prepareComicsForDisplay
 ]);
 
 fetch(dataSource)
-  .then(parseResponse)
+  .then(responseToJSON)
+  .then(getComicsFromResponse)
   .then(filterComics)
   .then(renderComics);
